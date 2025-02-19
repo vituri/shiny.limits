@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -48,6 +82,15 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro">Intro</a></li>
+  <li><a href="#a-tour-by-cran-whales" id="toc-a-tour-by-cran-whales" class="nav-link" data-scroll-target="#a-tour-by-cran-whales">A tour by CRAN whales</a>
+  <ul class="collapse">
+  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The data</a></li>
+  <li><a href="#widgets" id="toc-widgets" class="nav-link" data-scroll-target="#widgets">Widgets</a></li>
+  <li><a href="#tab-1-all-traffic" id="toc-tab-1-all-traffic" class="nav-link" data-scroll-target="#tab-1-all-traffic">Tab 1: All traffic</a></li>
+  <li><a href="#tab-2-biggest-whales" id="toc-tab-2-biggest-whales" class="nav-link" data-scroll-target="#tab-2-biggest-whales">Tab 2: Biggest whales</a></li>
+  <li><a href="#tab-3-whales-by-hour" id="toc-tab-3-whales-by-hour" class="nav-link" data-scroll-target="#tab-3-whales-by-hour">Tab 3: Whales by hour</a></li>
+  <li><a href="#tab-4-detail-view" id="toc-tab-4-detail-view" class="nav-link" data-scroll-target="#tab-4-detail-view">Tab 4: Detail view</a></li>
+  </ul></li>
   <li><a href="#app-1-modern-cranwhales" id="toc-app-1-modern-cranwhales" class="nav-link" data-scroll-target="#app-1-modern-cranwhales">App 1: modern cranwhales</a></li>
   </ul>
 </nav>
@@ -88,13 +131,66 @@ ul.task-list li input[type="checkbox"] {
 <p>Starting with an innocent shiny app, we will do many steps to make it more performant and analyze how many people can use it at the same time, <a href="https://rstudio.github.io/shinyloadtest/articles/analyzing-load-test-logs.html">creating reports</a> with <code>shinyloadtest</code> and <code>shinycannon</code>. The roadmap is the following:</p>
 <ul>
 <li>App 1: the first version of the <a href="https://rstudio.github.io/promises/articles/promises_08_casestudy.html">cranwhales app</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. We will modify some things to make it more modern (for example, use <code>bslib</code>).</li>
-<li>App 2: modify App 1 to introduce cache and memoise; use faster functions when possible.</li>
+<li>App 2: modify App 1 to introduce cache and memoise; use faster functions where possible.</li>
 <li>App 3: modify App 2 to introduce async via the <a href="https://rstudio.github.io/shiny/reference/ExtendedTask.html">new ExtendedTask</a>.</li>
 <li>App 4-R: modify App 3 to use an external <a href="https://www.rplumber.io/">plumber API</a>.</li>
-<li>App 4-Julia: modify App 3 to use an external API made in <a href="https://julialang.org/">Julia</a> with <a href="https://oxygenframework.github.io/Oxygen.jl/stable/">Oxygen.jl</a>. Julia is known for being a high-performance language, and we will give it a try here.</li>
+<li>App 4-Julia: modify App 3 to use an external API made in <a href="https://julialang.org/">Julia</a> with <a href="https://oxygenframework.github.io/Oxygen.jl/stable/">Oxygen.jl</a>. Julia is known for being a high-performance language, so let’s give it a try here.</li>
 <li>App 4-Python: modify App 3 to use an external API made in fastapi?</li>
 </ul>
 <p>The repo is structured as a R package to make it easy to track dependencies, load functions and share them between the apps.</p>
+</section>
+<section id="a-tour-by-cran-whales" class="level1">
+<h1>A tour by CRAN whales</h1>
+<p>You can see it <a href="https://gallery.shinyapps.io/cranwhales/">online</a> or follow me in this guided tour.</p>
+<p>The app intention is to show the <em>whales</em>: certain IPs that download <em>a lot</em> of data from CRAN.</p>
+<section id="the-data" class="level2">
+<h2 class="anchored" data-anchor-id="the-data">The data</h2>
+<p>For each selected date, the app should download the zipped file from <a href="http://cran-logs.rstudio.com/">http://cran-logs.rstudio.com/</a> and read it.</p>
+<p>We will store the downloaded data to be read again for the next user, but will delete all data when the app starts globally (not per-user) mimicking the fresh start of a new server.</p>
+<p>Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns. Here is a glimpse of the dataset:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = download_and_read()</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse(df, n = 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="widgets" class="level2">
+<h2 class="anchored" data-anchor-id="widgets">Widgets</h2>
+<p>The app has two widgets in a sidebar: - a date selector, stored in <code>input$date</code>: the day of the downloads. - a numeric input with the amount of <em>whales</em> (that is: the top N downloaders); stored in <code>input$n_whales</code>.</p>
+<p>There is no button.</p>
+<p><img src="images/app-filter.png" class="img-fluid"></p>
+</section>
+<section id="tab-1-all-traffic" class="level2">
+<h2 class="anchored" data-anchor-id="tab-1-all-traffic">Tab 1: All traffic</h2>
+<p>This tab show three value boxes and a chart with the amount of downloads per hour, colored by whales vs.&nbsp;non-whales. You can see the impact of 6 users compared to the total ~58k users.</p>
+<p><img src="images/app-all_traffic.png" class="img-fluid"></p>
+<p>We need to calculate the top N whales<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> and store it in a variable; then we calculate the amount of downloads per id per hour and colour by whale vs.&nbsp;non-whale.</p>
+</section>
+<section id="tab-2-biggest-whales" class="level2">
+<h2 class="anchored" data-anchor-id="tab-2-biggest-whales">Tab 2: Biggest whales</h2>
+<p>Here we compare the amount of downloads between the whales in a single day.</p>
+<p><img src="images/app-biggest-whales.png" class="img-fluid"></p>
+</section>
+<section id="tab-3-whales-by-hour" class="level2">
+<h2 class="anchored" data-anchor-id="tab-3-whales-by-hour">Tab 3: Whales by hour</h2>
+<p>For each whale in a facet, count the downloads by hour.</p>
+<p><img src="images/app-whales-by-hour.png" class="img-fluid"></p>
+</section>
+<section id="tab-4-detail-view" class="level2">
+<h2 class="anchored" data-anchor-id="tab-4-detail-view">Tab 4: Detail view</h2>
+<p>In the detail view, we can see which package was download in a timeline by selecting a whale.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/app-detail-view1.png" class="img-fluid figure-img"></p>
+<figcaption>A whale that downloaded many packages all the time</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/app-detail-view2.png" class="img-fluid figure-img"></p>
+<figcaption>A whale that downloaded one package at a time, in a organized manner</figcaption>
+</figure>
+</div>
+</section>
 </section>
 <section id="app-1-modern-cranwhales" class="level1">
 <h1>App 1: modern cranwhales</h1>
@@ -105,6 +201,7 @@ ul.task-list li input[type="checkbox"] {
 
 <ol>
 <li id="fn1"><p>see online version <a href="https://gallery.shinyapps.io/cranwhales/">here</a> or code <a href="https://github.com/rstudio/cranwhales">here</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>N = <code>input$n_whales</code><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main>
 <!-- /main column -->

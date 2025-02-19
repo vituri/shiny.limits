@@ -27,5 +27,76 @@ Starting with an innocent shiny app, we will do many steps to make it more perfo
 
 The repo is structured as a R package to make it easy to track dependencies, load functions and share them between the apps.
 
+# A tour by CRAN whales
+
+You can see it [online](https://gallery.shinyapps.io/cranwhales/) or follow me in this guided tour.
+
+The app intention is to show the *whales*: certain IPs that download *a lot* of data from CRAN.
+
+## The data
+
+For each selected date, the app should download the zipped file from [http://cran-logs.rstudio.com/](http://cran-logs.rstudio.com/) and read it. 
+
+We will store the downloaded data to be read again for the next user, but will delete all data when the app starts globally (not per-user) mimicking the fresh start of a new server. 
+
+Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns; it takes ~250MB of RAM after read. Here is a glimpse of the dataset:
+
+```{r, include=FALSE}
+# devtools::load_all()
+```
+
+
+```{r}
+# df = download_and_read()
+# glimpse(df, n = 10)
+```
+
+
+## Widgets
+
+The app has two widgets in a sidebar: 
+- a date selector, stored in `input$date`: the day of the downloads.
+- a numeric input with the amount of *whales* (that is: the top N downloaders); stored in `input$n_whales`. 
+
+There is no button.
+
+![](images/app-filter.png)
+
+## Tab 1: All traffic
+
+This tab show three value boxes and a chart with the amount of downloads per hour, colored by whales vs. non-whales. You can see the impact of 6 users compared to the total ~58k users.
+
+![](images/app-all_traffic.png)
+
+We need to calculate the top N whales^[N = `input$n_whales`] and store it in a variable; then we calculate the amount of downloads per id per hour and colour by whale vs. non-whale.
+
+## Tab 2: Biggest whales
+
+Here we compare the amount of downloads between the whales in a single day.
+
+![](images/app-biggest-whales.png)
+
+## Tab 3: Whales by hour
+
+For each whale in a facet, count the downloads by hour.
+
+![](images/app-whales-by-hour.png)
+
+## Tab 4: Detail view
+
+In the detail view, we can see which package was downloaded in a timeline by selecting a whale.
+
+![A whale that downloaded many packages all the time](images/app-detail-view1.png)
+
+![A whale that downloaded one package at a time, in a organized manner](images/app-detail-view2.png)
+
 # App 1: modern cranwhales
+
+I've made some changes compared to the original 2018 CRAN whales app:
+
+- I used the more modern `bslib` instead of `shinydashboard`.
+
+- I created a module for each page and appended the app version to it (for example, `md1.all_traffic_UI` means "module for app 1"). I also prepared all data in server before passing these to the modules. It will be easier to optimize the app later in this setting, and I pass to each module just the essential, nothing more.
+
+- I isolated all calculations and plots in separate files (`R/data.R` and `R/plots`), to be reused. More important: inside a `renderPlot` there is no calculation; in this way, a typical pipeline is `raw_data |> prepare_data() |> plot_data()`.
 
