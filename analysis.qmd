@@ -1,0 +1,31 @@
+---
+title: "The limits of Shiny: a guide to serve a shiny app to the maximum amount of people ever imagined"
+author: "Guilherme Vituri, R/Shiny developer at Appsilon"
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    toc-expand: true
+---
+
+# Intro
+
+> Given a fixed amount of hardware serving the shiny app (say, 2 cores) and a fixed amount of hardware serving an optional API backend (say, 4 cores), how many people can access a shiny app and have a good experience? Can we make it to a thousand?
+
+This guide is a modern reading of the classic `promises` [Case study: converting a Shiny app to async
+](https://rstudio.github.io/promises/articles/promises_08_casestudy.html) mixed with `shinyloadtest` [Case study: Scaling an app
+](https://rstudio.github.io/shinyloadtest/articles/case-study-scaling.html).
+
+Starting with an innocent shiny app, we will do many steps to make it more performant and analyze how many people can use it at the same time, [creating reports](https://rstudio.github.io/shinyloadtest/articles/analyzing-load-test-logs.html) with `shinyloadtest` and `shinycannon`. The roadmap is the following:
+
+- App 1: the first version of the [cranwhales app](https://rstudio.github.io/promises/articles/promises_08_casestudy.html)^[see online version [here](https://gallery.shinyapps.io/cranwhales/) or code [here](https://github.com/rstudio/cranwhales)]. We will modify some things to make it more modern (for example, use `bslib`).
+- App 2: modify App 1 to introduce cache and memoise; use faster functions where possible.
+- App 3: modify App 2 to introduce async via the [new ExtendedTask](https://rstudio.github.io/shiny/reference/ExtendedTask.html).
+- App 4-R: modify App 3 to use an external [plumber API](https://www.rplumber.io/).
+- App 4-Julia: modify App 3 to use an external API made in [Julia](https://julialang.org/) with [Oxygen.jl](https://oxygenframework.github.io/Oxygen.jl/stable/). Julia is known for being a high-performance language, so let's give it a try here.
+- App 4-Python: modify App 3 to use an external API made in fastapi?
+
+The repo is structured as a R package to make it easy to track dependencies, load functions and share them between the apps.
+
+# App 1: modern cranwhales
+
