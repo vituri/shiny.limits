@@ -98,7 +98,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
   <li><a href="#plots" id="toc-plots" class="nav-link" data-scroll-target="#plots">Plots</a></li>
   </ul></li>
-  <li><a href="#app-2-save-calculations-and-retrieve-them-later" id="toc-app-2-save-calculations-and-retrieve-them-later" class="nav-link" data-scroll-target="#app-2-save-calculations-and-retrieve-them-later">App 2: save calculations and retrieve them later</a></li>
+  <li><a href="#intermezzo-profiling-app-1" id="toc-intermezzo-profiling-app-1" class="nav-link" data-scroll-target="#intermezzo-profiling-app-1">Intermezzo: profiling app 1</a></li>
+  <li><a href="#app-2-avoid-redundances-and-cache-what-you-can" id="toc-app-2-avoid-redundances-and-cache-what-you-can" class="nav-link" data-scroll-target="#app-2-avoid-redundances-and-cache-what-you-can">App 2: avoid redundances and cache what you can</a></li>
   </ul>
 </nav>
 </div>
@@ -474,8 +475,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="app-2-save-calculations-and-retrieve-them-later" class="level1">
-<h1>App 2: save calculations and retrieve them later</h1>
+<section id="intermezzo-profiling-app-1" class="level1">
+<h1>Intermezzo: profiling app 1</h1>
+<p>Following <a href="https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application">this tutorial</a> from the <code>profviz</code> package…</p>
+<p>Looking at the profviz result, we can think of some changes to make in the app: - The function <code>calc_whales_by_hour</code> around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem. The code for this function is simple:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>calc_whales_by_hour <span class="ot">&lt;-</span> <span class="cf">function</span>(df, df_whales) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  whales_by_hour <span class="ot">&lt;-</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    df <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">inner_join</span>(df_whales, <span class="at">by =</span> <span class="st">"ip_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(hour, ip_name, <span class="at">name =</span> <span class="st">"downloads"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  whales_by_hour</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<!-- but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id, and then use this table in the app. It will also be easy to get the whales: just filter the 25 with most downloads and.......... -->
+</section>
+<section id="app-2-avoid-redundances-and-cache-what-you-can" class="level1">
+<h1>App 2: avoid redundances and cache what you can</h1>
+<p>After adding many <code>bindCache</code> to the reactives, we run <code>run_app2()</code> and see that………</p>
+<!-- check app2 without the mem_disk option -->
+<!-- Reading the docs of `bindCache` we can see that the size is small -->
 </section>
 
 

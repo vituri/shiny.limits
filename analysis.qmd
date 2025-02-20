@@ -382,4 +382,32 @@ plot_whale_data <- function(whale_data) {
 ```
 
 
-# App 2: save calculations and retrieve them later
+# Intermezzo: profiling app 1
+
+Following [this tutorial](https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application) from the `profviz` package...
+
+Looking at the profviz result, we can think of some changes to make in the app:
+- The function `calc_whales_by_hour` around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem. The code for this function is simple:
+
+```{r, eval=FALSE}
+calc_whales_by_hour <- function(df, df_whales) {
+  whales_by_hour <-
+    df |>
+    inner_join(df_whales, by = "ip_id") |>
+    count(hour, ip_name, name = "downloads")
+
+  whales_by_hour
+}
+```
+
+<!-- but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id, and then use this table in the app. It will also be easy to get the whales: just filter the 25 with most downloads and.......... -->
+
+
+
+# App 2: avoid redundances and cache what you can
+
+After adding many `bindCache` to the reactives, we run `run_app2()` and see that.........
+
+<!-- check app2 without the mem_disk option -->
+
+<!-- Reading the docs of `bindCache` we can see that the size is small -->

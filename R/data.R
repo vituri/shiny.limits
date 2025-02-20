@@ -17,16 +17,19 @@ download_data <- function(date = today() - days(2)) {
   path <- file_path(date)
 
   # download only if file does not exist
-  if (!file.exists(path)) download.file(url = url, destfile = path)
+  if (!file.exists(path)) {
+    cli::cli_progress_step('Downloading data...')
+    download.file(url = url, destfile = path)
+  }
 
   NULL
 }
 
 read_data <- function(date = today() - days(2)) {
-  path <- file_path(date)
+  cli::cli_progress_step('Reading data...')
 
   df <-
-    readr::read_csv(path, col_types = "Dti---f-fi", progress = FALSE) |>
+    readr::read_csv(file_path(date), col_types = "Dti---f-fi", progress = FALSE) |>
     filter(!is.na(package)) |>
     mutate(hour = hms::trunc_hms(time, 60 * 60))
 

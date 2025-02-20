@@ -162,5 +162,73 @@ md1.detail_view_server <- function(id = "detail_view", rc.data, rc.whales) {
 
 
 # app2 --------------------------------------------------------------------
+md2.detail_view_server <- function(id = "detail_view", rc.data, rc.whales) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      # filtered data -----------------------------------------------------------
+      rv <- reactiveValues(date = NULL)
 
+      observe({
+        rv$date <- rc.data()$date[1]
+        rv$n_whales = rc.whales() |> nrow()
+      })
+
+      rc.data_joined <- reactive({
+        rc.data() |>
+          inner_join(rc.whales())
+      }) |>
+        bindCache(rv$date, rv$n_whales)
+
+      rc.whale_data <- reactive({
+        rc.data_joined() |>
+          filter(ip_name %in% input$ip_name)
+      }) |>
+        bindCache(rv$date, input$ip_name)
+
+      # boxes -------------------------------------------------------------------
+      observe({
+        whales <- rc.whales()
+        current_choice <- input$ip_name
+        choices <- whales$ip_name
+        selected <- if_else(condition = current_choice %in% choices, true = current_choice, false = choices[1])
+
+        updateSelectInput(inputId = "ip_name", choices = choices, selected = selected, session = session)
+      }) |>
+        bindEvent(rc.whales())
+
+      rc.valuebox1 <- reactive({
+        calc_valuebox_size(rc.whale_data())
+      })
+
+      rc.valuebox2 <- reactive({
+        calc_valuebox_rows(rc.whale_data())
+      })
+
+      rc.valuebox3 <- reactive({
+        calc_valuebox_unique_packages(rc.whale_data())
+      })
+
+      output$value_box1 <- renderText({
+        rc.valuebox1()
+      })
+
+      output$value_box2 <- renderText({
+        rc.valuebox2()
+      })
+
+      output$value_box3 <- renderText({
+        rc.valuebox3()
+      })
+
+      output$plot <- renderPlot({
+        req(nrow(rc.whale_data()) > 0)
+
+        rc.whale_data() |>
+          plot_whale_data()
+      }) |>
+        bindCache(rv$date, input$ip_name)
+    }
+  )
+}
 
