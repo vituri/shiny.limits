@@ -1,8 +1,3 @@
-test_plot <- function() {
-  ggplot(mpg, aes(class)) +
-    geom_bar()
-}
-
 my_gg_theme <- function() {
   theme_minimal()
 }

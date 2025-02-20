@@ -158,3 +158,9 @@ md1.detail_view_server <- function(id = "detail_view", rc.data, rc.whales) {
     }
   )
 }
+
+
+
+# app2 --------------------------------------------------------------------
+
+
