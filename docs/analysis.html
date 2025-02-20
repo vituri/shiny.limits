@@ -8,7 +8,7 @@
 
 <meta name="author" content="Guilherme Vituri, R/Shiny developer at Appsilon">
 
-<title>The limits of Shiny: a guide to serve a shiny app to the maximum amount of people ever imagined</title>
+<title>The limits of Shiny</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -84,14 +84,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro">Intro</a></li>
   <li><a href="#a-tour-by-cran-whales" id="toc-a-tour-by-cran-whales" class="nav-link" data-scroll-target="#a-tour-by-cran-whales">A tour by CRAN whales</a>
   <ul class="collapse">
-  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The data</a></li>
   <li><a href="#widgets" id="toc-widgets" class="nav-link" data-scroll-target="#widgets">Widgets</a></li>
+  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The data</a></li>
   <li><a href="#tab-1-all-traffic" id="toc-tab-1-all-traffic" class="nav-link" data-scroll-target="#tab-1-all-traffic">Tab 1: All traffic</a></li>
   <li><a href="#tab-2-biggest-whales" id="toc-tab-2-biggest-whales" class="nav-link" data-scroll-target="#tab-2-biggest-whales">Tab 2: Biggest whales</a></li>
   <li><a href="#tab-3-whales-by-hour" id="toc-tab-3-whales-by-hour" class="nav-link" data-scroll-target="#tab-3-whales-by-hour">Tab 3: Whales by hour</a></li>
   <li><a href="#tab-4-detail-view" id="toc-tab-4-detail-view" class="nav-link" data-scroll-target="#tab-4-detail-view">Tab 4: Detail view</a></li>
   </ul></li>
   <li><a href="#app-1-modern-cranwhales" id="toc-app-1-modern-cranwhales" class="nav-link" data-scroll-target="#app-1-modern-cranwhales">App 1: modern cranwhales</a></li>
+  <li><a href="#app-2-save-calculations-and-retrieve-them-later" id="toc-app-2-save-calculations-and-retrieve-them-later" class="nav-link" data-scroll-target="#app-2-save-calculations-and-retrieve-them-later">App 2: save calculations and retrieve them later</a></li>
   </ul>
 </nav>
 </div>
@@ -99,7 +100,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">The limits of Shiny: a guide to serve a shiny app to the maximum amount of people ever imagined</h1>
+<h1 class="title">The limits of Shiny</h1>
+<p class="subtitle lead">A guide to serve a shiny app to the maximum amount of people ever imagined</p>
 </div>
 
 
@@ -122,6 +124,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>eval_things <span class="ot">=</span> <span class="cn">FALSE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <section id="intro" class="level1">
 <h1>Intro</h1>
 <blockquote class="blockquote">
@@ -143,21 +148,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>A tour by CRAN whales</h1>
 <p>You can see it <a href="https://gallery.shinyapps.io/cranwhales/">online</a> or follow me in this guided tour.</p>
 <p>The app intention is to show the <em>whales</em>: certain IPs that download <em>a lot</em> of data from CRAN.</p>
+<section id="widgets" class="level2">
+<h2 class="anchored" data-anchor-id="widgets">Widgets</h2>
+<p>The app has two widgets in a sidebar: - a date selector, stored in <code>input$date</code>: the day of the downloads. - a numeric input with the amount of <em>whales</em> (that is: the top N downloaders); stored in <code>input$n_whales</code>. It goes from 1 to 25.</p>
+<p>There is no button.</p>
+<p><img src="images/app-filter.png" class="img-fluid"></p>
+</section>
 <section id="the-data" class="level2">
 <h2 class="anchored" data-anchor-id="the-data">The data</h2>
 <p>For each selected date, the app should download the zipped file from <a href="http://cran-logs.rstudio.com/">http://cran-logs.rstudio.com/</a> and read it.</p>
 <p>We will store the downloaded data to be read again for the next user, but will delete all data when the app starts globally (not per-user) mimicking the fresh start of a new server.</p>
-<p>Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns. Here is a glimpse of the dataset:</p>
+<p>Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns; it takes ~250MB of RAM after read. Here is a glimpse of the dataset:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = download_and_read()</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse(df, n = 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = download_and_read()</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse(df, n = 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
-<section id="widgets" class="level2">
-<h2 class="anchored" data-anchor-id="widgets">Widgets</h2>
-<p>The app has two widgets in a sidebar: - a date selector, stored in <code>input$date</code>: the day of the downloads. - a numeric input with the amount of <em>whales</em> (that is: the top N downloaders); stored in <code>input$n_whales</code>.</p>
-<p>There is no button.</p>
-<p><img src="images/app-filter.png" class="img-fluid"></p>
 </section>
 <section id="tab-1-all-traffic" class="level2">
 <h2 class="anchored" data-anchor-id="tab-1-all-traffic">Tab 1: All traffic</h2>
@@ -177,7 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tab-4-detail-view" class="level2">
 <h2 class="anchored" data-anchor-id="tab-4-detail-view">Tab 4: Detail view</h2>
-<p>In the detail view, we can see which package was download in a timeline by selecting a whale.</p>
+<p>In the detail view, we can see which package was downloaded in a timeline by selecting a whale.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/app-detail-view1.png" class="img-fluid figure-img"></p>
@@ -194,6 +199,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="app-1-modern-cranwhales" class="level1">
 <h1>App 1: modern cranwhales</h1>
+<p>I’ve made some changes compared to the original 2018 CRAN whales app:</p>
+<ul>
+<li><p>I used the more modern <code>bslib</code> instead of <code>shinydashboard</code>.</p></li>
+<li><p>I created a module for each page and appended the app version to it (for example, <code>md1.all_traffic_UI</code> means “module for app 1”). I also prepared all possible data in server before passing these to the modules<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. It will be easier to optimize the app later in this setting, and I pass to each module just the essential.</p></li>
+<li><p>I isolated all calculations and plots in separate files (<code>R/data.R</code> and <code>R/plots</code>), to be reused. More important: inside a <code>renderPlot</code> there is no calculation; in this way, a typical pipeline is <code>raw_data |&gt; prepare_data() |&gt; plot_data()</code>.</p></li>
+</ul>
+</section>
+<section id="app-2-save-calculations-and-retrieve-them-later" class="level1">
+<h1>App 2: save calculations and retrieve them later</h1>
 </section>
 
 
@@ -202,6 +216,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol>
 <li id="fn1"><p>see online version <a href="https://gallery.shinyapps.io/cranwhales/">here</a> or code <a href="https://github.com/rstudio/cranwhales">here</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2"><p>N = <code>input$n_whales</code><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>only the last tab has widgets, so the other modules just receive a reactive and plot something.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main>
 <!-- /main column -->

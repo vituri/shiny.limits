@@ -1,5 +1,6 @@
 ---
-title: "The limits of Shiny: a guide to serve a shiny app to the maximum amount of people ever imagined"
+title: "The limits of Shiny"
+subtitle: "A guide to serve a shiny app to the maximum amount of people ever imagined"
 author: "Guilherme Vituri, R/Shiny developer at Appsilon"
 format: 
   html:
@@ -7,6 +8,11 @@ format:
     toc-depth: 3
     toc-expand: true
 ---
+
+```{r}
+eval_things = FALSE
+```
+
 
 # Intro
 
@@ -33,6 +39,17 @@ You can see it [online](https://gallery.shinyapps.io/cranwhales/) or follow me i
 
 The app intention is to show the *whales*: certain IPs that download *a lot* of data from CRAN.
 
+
+## Widgets
+
+The app has two widgets in a sidebar: 
+- a date selector, stored in `input$date`: the day of the downloads.
+- a numeric input with the amount of *whales* (that is: the top N downloaders); stored in `input$n_whales`. It goes from 1 to 25.
+
+There is no button.
+
+![](images/app-filter.png)
+
 ## The data
 
 For each selected date, the app should download the zipped file from [http://cran-logs.rstudio.com/](http://cran-logs.rstudio.com/) and read it. 
@@ -41,26 +58,17 @@ We will store the downloaded data to be read again for the next user, but will d
 
 Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns; it takes ~250MB of RAM after read. Here is a glimpse of the dataset:
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=eval_things}
 # devtools::load_all()
 ```
 
 
-```{r}
+```{r, eval=eval_things}
 # df = download_and_read()
 # glimpse(df, n = 10)
 ```
 
 
-## Widgets
-
-The app has two widgets in a sidebar: 
-- a date selector, stored in `input$date`: the day of the downloads.
-- a numeric input with the amount of *whales* (that is: the top N downloaders); stored in `input$n_whales`. 
-
-There is no button.
-
-![](images/app-filter.png)
 
 ## Tab 1: All traffic
 
@@ -96,7 +104,8 @@ I've made some changes compared to the original 2018 CRAN whales app:
 
 - I used the more modern `bslib` instead of `shinydashboard`.
 
-- I created a module for each page and appended the app version to it (for example, `md1.all_traffic_UI` means "module for app 1"). I also prepared all data in server before passing these to the modules. It will be easier to optimize the app later in this setting, and I pass to each module just the essential, nothing more.
+- I created a module for each page and appended the app version to it (for example, `md1.all_traffic_UI` means "module for app 1"). I also prepared all possible data in server before passing these to the modules^[only the last tab has widgets, so the other modules just receive a reactive and plot something.]. It will be easier to optimize the app later in this setting, and I pass to each module just the essential.
 
 - I isolated all calculations and plots in separate files (`R/data.R` and `R/plots`), to be reused. More important: inside a `renderPlot` there is no calculation; in this way, a typical pipeline is `raw_data |> prepare_data() |> plot_data()`.
 
+# App 2: save calculations and retrieve them later
