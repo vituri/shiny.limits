@@ -1,5 +1,5 @@
-ui1 = function() {
-  ui = page_navbar(
+ui1 <- function() {
+  ui <- page_navbar(
     title = "CRAM whales 2.0",
     theme = bs_theme(bootswatch = "flatly"),
     sidebar = sidebar(
@@ -11,4 +11,6 @@ ui1 = function() {
     nav_panel(title = "Whales by hour", md1.whales_by_hour_UI()),
     nav_panel(title = "Detail view", md1.detail_view_UI())
   )
+
+  ui
 }

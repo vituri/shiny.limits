@@ -10,8 +10,8 @@ format:
     output-file: index
 ---
 
-```{r}
-eval_things = FALSE
+```{r, include=FALSE}
+eval_things <- FALSE
 ```
 
 
@@ -108,5 +108,20 @@ I've made some changes compared to the original 2018 CRAN whales app:
 - I created a module for each page and appended the app version to it (for example, `md1.all_traffic_UI` means "module for app 1"). I also prepared all possible data in server before passing these to the modules^[only the last tab has widgets, so the other modules just receive a reactive and plot something.]. It will be easier to optimize the app later in this setting, and I pass to each module just the essential.
 
 - I isolated all calculations and plots in separate files (`R/data.R` and `R/plots`), to be reused. More important: inside a `renderPlot` there is no calculation; in this way, a typical pipeline is `raw_data |> prepare_data() |> plot_data()`.
+
+To run the app, load all dependencies and just run
+
+```{r, eval=FALSE}
+run_app1()
+```
+
+![](images/app1-t1.png)
+
+![](images/app1-t2.png)
+
+![](images/app1-t3.png)
+
+![](images/app1-t4.png)
+
 
 # App 2: save calculations and retrieve them later

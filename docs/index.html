@@ -124,9 +124,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>eval_things <span class="ot">=</span> <span class="cn">FALSE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 <section id="intro" class="level1">
 <h1>Intro</h1>
 <blockquote class="blockquote">
@@ -160,8 +157,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We will store the downloaded data to be read again for the next user, but will delete all data when the app starts globally (not per-user) mimicking the fresh start of a new server.</p>
 <p>Each zipped file has around ~90MB and stores a dataframe with ~7 million rows and 6 columns; it takes ~250MB of RAM after read. Here is a glimpse of the dataset:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = download_and_read()</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse(df, n = 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = download_and_read()</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse(df, n = 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="tab-1-all-traffic" class="level2">
@@ -205,6 +202,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>I created a module for each page and appended the app version to it (for example, <code>md1.all_traffic_UI</code> means “module for app 1”). I also prepared all possible data in server before passing these to the modules<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. It will be easier to optimize the app later in this setting, and I pass to each module just the essential.</p></li>
 <li><p>I isolated all calculations and plots in separate files (<code>R/data.R</code> and <code>R/plots</code>), to be reused. More important: inside a <code>renderPlot</code> there is no calculation; in this way, a typical pipeline is <code>raw_data |&gt; prepare_data() |&gt; plot_data()</code>.</p></li>
 </ul>
+<p>To run the app, load all dependencies and just run</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">run_app1</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><img src="images/app1-t1.png" class="img-fluid"></p>
+<p><img src="images/app1-t2.png" class="img-fluid"></p>
+<p><img src="images/app1-t3.png" class="img-fluid"></p>
+<p><img src="images/app1-t4.png" class="img-fluid"></p>
 </section>
 <section id="app-2-save-calculations-and-retrieve-them-later" class="level1">
 <h1>App 2: save calculations and retrieve them later</h1>
