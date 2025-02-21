@@ -38,8 +38,7 @@ The repo is structured as a R package to make it easy to track dependencies, loa
 
 You can see it [online](https://gallery.shinyapps.io/cranwhales/) or follow me in this guided tour.
 
-The app intention is to show the *whales*: certain IPs that download *a lot* of data from CRAN.
-
+The app intention is to show the *whales*: certain IPs that download *a lot* of data from CRAN. Let me describe its features.
 
 ## Widgets
 
@@ -109,7 +108,7 @@ I've made some changes compared to the original 2018 CRAN whales app:
 
 - I isolated all calculations and plots in separate files (`R/data.R` and `R/plots`), to be reused. More important: inside a `renderPlot` there is no calculation; in this way, a typical pipeline is `raw_data |> prepare_data() |> plot_data()`.
 
-To run the app, load all dependencies and just run
+To run the app, load all dependencies with `devtools::load_all()` (or control+shift+L, in RStudio) and just run
 
 ```{r, eval=FALSE}
 run_app1()
@@ -123,7 +122,11 @@ run_app1()
 
 ![](images/app1-t4.png)
 
-## UI
+## Code
+
+Here I show a bit of code; this session can be skipped, but some details about the server will be needed later.
+
+### UI
 
 The UI simply call the modules
 
@@ -146,9 +149,12 @@ ui1 <- function() {
 }
 ```
 
-## Server
+### Server
+
+In the server I tried to calculate all necessary reactives to pass to modules; reactives have a `rc.` to be easy to remember which objects are reactive and which are not.
 
 ```{r, eval=FALSE}
+#| code-fold: true
 server1 <- function(input, output, session) {
   # rc.data: read data ------------------------------------------------------
   rc.data <- reactive({
@@ -212,9 +218,13 @@ server1 <- function(input, output, session) {
 }
 ```
 
-## Data
+### Data
+
+The `r/data.R` file has all the functions necessary to read files and do the calculations.
 
 ```{r, eval=FALSE}
+#| code-fold: true
+
 # read data ---------------------------------------------------------------
 create_dir_and_delete_files <- function() {
   dir.create(path = "data_cache", showWarnings = FALSE)
@@ -320,9 +330,13 @@ calc_valuebox_unique_packages <- function(df) {
 }
 ```
 
-## Plots
+### Plots
+
+Here we stored every function related to plotting things. They were stolen as-is from the original [CRAN whales app code](https://github.com/rstudio/cranwhales/blob/sync/app.R).
 
 ```{r, eval=FALSE}
+#| code-fold: true
+
 my_gg_theme <- function() {
   theme_minimal()
 }
@@ -382,12 +396,23 @@ plot_whale_data <- function(whale_data) {
 ```
 
 
-# Intermezzo: profiling app 1
+# Intermezzo: profiling App 1
 
-Following [this tutorial](https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application) from the `profviz` package...
+There are two ways to measure the performance of this app: 
+
+- We can analyze the amount of time each function takes to execute and try to optimize them. This measures the experience of a single user. We will use 'profviz` for that.
+
+- We can analyze the behavior of $n$ concurrent users in the app and see what functions/outputs/reactives are taking more time. Remember: since R is single-threaded, if 10 people are using the app and one session triggers a slow calculation, all sessions will have to wait for it to finish. We will use `shinyloadtest` for that.
+
+## `profviz`
+
+Following [this tutorial](https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application) from the `profviz` package, I recorded one session of the app being used. I just roamed around a bit, changing the inputs and seeing some graphs.
 
 Looking at the profviz result, we can think of some changes to make in the app:
-- The function `calc_whales_by_hour` around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem. The code for this function is simple:
+
+- The function `calc_whales_by_hour` takes around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem. 
+
+The code for this function is simple:
 
 ```{r, eval=FALSE}
 calc_whales_by_hour <- function(df, df_whales) {
@@ -400,14 +425,68 @@ calc_whales_by_hour <- function(df, df_whales) {
 }
 ```
 
-<!-- but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id, and then use this table in the app. It will also be easy to get the whales: just filter the 25 with most downloads and.......... -->
+but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id and already calculate the top 25 whales (which is the maximum number for the selectInput).
 
+- Downloading the data takes a long time. Some files can have ~100MB. Reading them also takes time. We will cache these operations.
 
+## `shinyloadtest`
+
+Following the [`shinyloadtest` docs](https://rstudio.github.io/shinyloadtest/index.html), we have to:
+
+- [Install `shinycannon`](https://rstudio.github.io/shinyloadtest/articles/shinycannon.html): a tool in Java to simulate $n$ concurrent users. If you got any errors, take a look at your Java version.
+
+- Run your app in a background job (to not block your R session).
+
+I created a directory called `jobs/` where I stored these scripts. For example, to run App 1 deleting all the files in `data_cache`, I wrote
+
+```r
+devtools::load_all()
+run_app1(delete_files = TRUE)
+```
+
+and then click to run as background job on RStudio.
+
+- Run `record_session`: this will open a new tab where you can play around the app simulating a user; the output is a *recording* object.
+
+More precisely, I ran
+
+```r
+shinyloadtest::record_session(glue::glue("http://127.0.0.1:8001"), output_file = "app1")
+```
+
+- Use the `shinycannon` command to run the recording with $n$ users. Here I chose $n = 10$ and a minimum duration of 4 minutes. The output is saved on `run_app1w10` (App 1, run with 10 workers).
+
+```cmd
+shinycannon app1 http://127.0.0.1:8001 --workers 10 --loaded-duration-minutes 4 --output-dir run_app1w10 --overwrite-output
+```
+
+You can see `R/load_test.R` for some auxiliary functions.
+
+The complete report can be seen on `my_runs.html`, but here are some highlights:
+
+![The time spent by each user session. In an app with no delays, all sessions should finish at a close time.](images/run_app1w10-1.png)
+
+![A detailed view of the time to load the home page per session. Notice that some users had to wait more than 30 seconds to load the home page.](images/run_app1w10-2.png)
+
+![Boxplot of time spent on each task.](images/run_app1w10-3.png)
 
 # App 2: avoid redundances and cache what you can
 
-After adding many `bindCache` to the reactives, we run `run_app2()` and see that.........
+After adding many `bindCache` to the reactives, we run `run_app2()` and see that only the first running of a given function is really calculated; the rest is cached. Some key points when using `bindCache`:
 
-<!-- check app2 without the mem_disk option -->
+- The cache key can't be too big. Using the entire `rc.data()` would be slow. Since there is a bijection between days and rc.data, we can use solely the date.
 
-<!-- Reading the docs of `bindCache` we can see that the size is small -->
+::: {.callout-note title="`bindCache` docs"}
+To compute the cache key, bindCache() hashes the contents of ..., so it's best to avoid including large objects in a cache key since that can result in slow hashing. It's also best to avoid reference objects like environments and R6 objects, since the serialization of these objects may not capture relevant changes.
+
+If you want to use a large object as part of a cache key, it may make sense to do some sort of reduction on the data that still captures information about whether a value can be retrieved from the cache. For example, if you have a large data set with timestamps, it might make sense to extract the most recent timestamp and return that. Then, instead of hashing the entire data object, the cached reactive only needs to hash the timestamp.
+
+```
+r <- reactive({ compute(bigdata()) } %>%
+  bindCache({ extract_most_recent_time(bigdata()) })
+```
+:::
+
+- Saving a big object in the disk takes time! The first time we read a file, a copy of `rc.data` is going to be saved as a RDS file in the `myapp-cache` dir. This can take some seconds to finish.
+
+- We are using `shinyOptions(cache = cachem::cache_disk("./myapp-cache", max_size = 1024 * 1024^2, logfile = stdout(), evict = "lru"))` as the caching options. This means that the cache will be saved on disk so all users (even in different sessions) can access the cache. The files will be saved up to 1GB and then the least used will be deleted.

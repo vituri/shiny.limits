@@ -17,7 +17,8 @@ LazyData: true
 Imports: 
   glue,
   gdata,
-  hms
+  hms,
+  devtools
 Depends:
   shiny,
   bslib,

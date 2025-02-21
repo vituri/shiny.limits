@@ -70,6 +70,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="analysis_files/libs/bootstrap/bootstrap-5ddab9269d631e6415f5a9c1c180e3c3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -93,12 +122,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#app-1-modern-cranwhales" id="toc-app-1-modern-cranwhales" class="nav-link" data-scroll-target="#app-1-modern-cranwhales">App 1: modern cranwhales</a>
   <ul class="collapse">
+  <li><a href="#code" id="toc-code" class="nav-link" data-scroll-target="#code">Code</a>
+  <ul class="collapse">
   <li><a href="#ui" id="toc-ui" class="nav-link" data-scroll-target="#ui">UI</a></li>
   <li><a href="#server" id="toc-server" class="nav-link" data-scroll-target="#server">Server</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
   <li><a href="#plots" id="toc-plots" class="nav-link" data-scroll-target="#plots">Plots</a></li>
   </ul></li>
-  <li><a href="#intermezzo-profiling-app-1" id="toc-intermezzo-profiling-app-1" class="nav-link" data-scroll-target="#intermezzo-profiling-app-1">Intermezzo: profiling app 1</a></li>
+  </ul></li>
+  <li><a href="#intermezzo-profiling-app-1" id="toc-intermezzo-profiling-app-1" class="nav-link" data-scroll-target="#intermezzo-profiling-app-1">Intermezzo: profiling App 1</a>
+  <ul class="collapse">
+  <li><a href="#profviz" id="toc-profviz" class="nav-link" data-scroll-target="#profviz"><code>profviz</code></a></li>
+  <li><a href="#shinyloadtest" id="toc-shinyloadtest" class="nav-link" data-scroll-target="#shinyloadtest"><code>shinyloadtest</code></a></li>
+  </ul></li>
   <li><a href="#app-2-avoid-redundances-and-cache-what-you-can" id="toc-app-2-avoid-redundances-and-cache-what-you-can" class="nav-link" data-scroll-target="#app-2-avoid-redundances-and-cache-what-you-can">App 2: avoid redundances and cache what you can</a></li>
   </ul>
 </nav>
@@ -151,7 +187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="a-tour-by-cran-whales" class="level1">
 <h1>A tour by CRAN whales</h1>
 <p>You can see it <a href="https://gallery.shinyapps.io/cranwhales/">online</a> or follow me in this guided tour.</p>
-<p>The app intention is to show the <em>whales</em>: certain IPs that download <em>a lot</em> of data from CRAN.</p>
+<p>The app intention is to show the <em>whales</em>: certain IPs that download <em>a lot</em> of data from CRAN. Let me describe its features.</p>
 <section id="widgets" class="level2">
 <h2 class="anchored" data-anchor-id="widgets">Widgets</h2>
 <p>The app has two widgets in a sidebar: - a date selector, stored in <code>input$date</code>: the day of the downloads. - a numeric input with the amount of <em>whales</em> (that is: the top N downloaders); stored in <code>input$n_whales</code>. It goes from 1 to 25.</p>
@@ -209,7 +245,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>I created a module for each page and appended the app version to it (for example, <code>md1.all_traffic_UI</code> means “module for app 1”). I also prepared all possible data in server before passing these to the modules<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. It will be easier to optimize the app later in this setting, and I pass to each module just the essential.</p></li>
 <li><p>I isolated all calculations and plots in separate files (<code>R/data.R</code> and <code>R/plots</code>), to be reused. More important: inside a <code>renderPlot</code> there is no calculation; in this way, a typical pipeline is <code>raw_data |&gt; prepare_data() |&gt; plot_data()</code>.</p></li>
 </ul>
-<p>To run the app, load all dependencies and just run</p>
+<p>To run the app, load all dependencies with <code>devtools::load_all()</code> (or control+shift+L, in RStudio) and just run</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">run_app1</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -217,8 +253,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><img src="images/app1-t2.png" class="img-fluid"></p>
 <p><img src="images/app1-t3.png" class="img-fluid"></p>
 <p><img src="images/app1-t4.png" class="img-fluid"></p>
-<section id="ui" class="level2">
-<h2 class="anchored" data-anchor-id="ui">UI</h2>
+<section id="code" class="level2">
+<h2 class="anchored" data-anchor-id="code">Code</h2>
+<p>Here I show a bit of code; this session can be skipped, but some details about the server will be needed later.</p>
+<section id="ui" class="level3">
+<h3 class="anchored" data-anchor-id="ui">UI</h3>
 <p>The UI simply call the modules</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ui1 <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
@@ -239,9 +278,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="server" class="level2">
-<h2 class="anchored" data-anchor-id="server">Server</h2>
+<section id="server" class="level3">
+<h3 class="anchored" data-anchor-id="server">Server</h3>
+<p>In the server I tried to calculate all necessary reactives to pass to modules; reactives have a <code>rc.</code> to be easy to remember which objects are reactive and which are not.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>server1 <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># rc.data: read data ------------------------------------------------------</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  rc.data <span class="ot">&lt;-</span> <span class="fu">reactive</span>({</span>
@@ -303,11 +345,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">md1.whales_by_hour_server</span>(<span class="at">rc.downloads_by_hour_with_names =</span> rc.downloads_by_hour_with_names)</span>
 <span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">md1.detail_view_server</span>(<span class="at">rc.data =</span> rc.data, <span class="at">rc.whales =</span> rc.whales)</span>
 <span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
-<section id="data" class="level2">
-<h2 class="anchored" data-anchor-id="data">Data</h2>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>The <code>r/data.R</code> file has all the functions necessary to read files and do the calculations.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read data ---------------------------------------------------------------</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>create_dir_and_delete_files <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dir.create</span>(<span class="at">path =</span> <span class="st">"data_cache"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
@@ -411,11 +457,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>    <span class="fu">length</span>() <span class="sc">|&gt;</span></span>
 <span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>    <span class="fu">format_number</span>()</span>
 <span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
-<section id="plots" class="level2">
-<h2 class="anchored" data-anchor-id="plots">Plots</h2>
+<section id="plots" class="level3">
+<h3 class="anchored" data-anchor-id="plots">Plots</h3>
+<p>Here we stored every function related to plotting things. They were stolen as-is from the original <a href="https://github.com/rstudio/cranwhales/blob/sync/app.R">CRAN whales app code</a>.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>my_gg_theme <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span>
@@ -472,13 +522,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
 <span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_y_discrete</span>(<span class="at">breaks =</span> breaks)</span>
 <span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 </section>
+</section>
 <section id="intermezzo-profiling-app-1" class="level1">
-<h1>Intermezzo: profiling app 1</h1>
-<p>Following <a href="https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application">this tutorial</a> from the <code>profviz</code> package…</p>
-<p>Looking at the profviz result, we can think of some changes to make in the app: - The function <code>calc_whales_by_hour</code> around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem. The code for this function is simple:</p>
+<h1>Intermezzo: profiling App 1</h1>
+<p>There are two ways to measure the performance of this app:</p>
+<ul>
+<li><p>We can analyze the amount of time each function takes to execute and try to optimize them. This measures the experience of a single user. We will use ’profviz` for that.</p></li>
+<li><p>We can analyze the behavior of <span class="math inline">\(n\)</span> concurrent users in the app and see what functions/outputs/reactives are taking more time. Remember: since R is single-threaded, if 10 people are using the app and one session triggers a slow calculation, all sessions will have to wait for it to finish. We will use <code>shinyloadtest</code> for that.</p></li>
+</ul>
+<section id="profviz" class="level2">
+<h2 class="anchored" data-anchor-id="profviz"><code>profviz</code></h2>
+<p>Following <a href="https://profvis.r-lib.org/articles/examples.html#example-3---profiling-a-shiny-application">this tutorial</a> from the <code>profviz</code> package, I recorded one session of the app being used. I just roamed around a bit, changing the inputs and seeing some graphs.</p>
+<p>Looking at the profviz result, we can think of some changes to make in the app:</p>
+<ul>
+<li>The function <code>calc_whales_by_hour</code> takes around 1/4 seconds to run; it is not bad, but with dozens of concurrent users this can be a problem.</li>
+</ul>
+<p>The code for this function is simple:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>calc_whales_by_hour <span class="ot">&lt;-</span> <span class="cf">function</span>(df, df_whales) {</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  whales_by_hour <span class="ot">&lt;-</span></span>
@@ -489,13 +552,79 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  whales_by_hour</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<!-- but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id, and then use this table in the app. It will also be easy to get the whales: just filter the 25 with most downloads and.......... -->
+<p>but with 7 million rows this anti join can get a little slow. Every time you change the number of whales, this is recalculated. One solution is to calculate the counting just one time for every ip_id and already calculate the top 25 whales (which is the maximum number for the selectInput).</p>
+<ul>
+<li>Downloading the data takes a long time. Some files can have ~100MB. Reading them also takes time. We will cache these operations.</li>
+</ul>
+</section>
+<section id="shinyloadtest" class="level2">
+<h2 class="anchored" data-anchor-id="shinyloadtest"><code>shinyloadtest</code></h2>
+<p>Following the <a href="https://rstudio.github.io/shinyloadtest/index.html"><code>shinyloadtest</code> docs</a>, we have to:</p>
+<ul>
+<li><p><a href="https://rstudio.github.io/shinyloadtest/articles/shinycannon.html">Install <code>shinycannon</code></a>: a tool in Java to simulate <span class="math inline">\(n\)</span> concurrent users. If you got any errors, take a look at your Java version.</p></li>
+<li><p>Run your app in a background job (to not block your R session).</p></li>
+</ul>
+<p>I created a directory called <code>jobs/</code> where I stored these scripts. For example, to run App 1 deleting all the files in <code>data_cache</code>, I wrote</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">run_app1</span>(<span class="at">delete_files =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>and then click to run as background job on RStudio.</p>
+<ul>
+<li>Run <code>record_session</code>: this will open a new tab where you can play around the app simulating a user; the output is a <em>recording</em> object.</li>
+</ul>
+<p>More precisely, I ran</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>shinyloadtest<span class="sc">::</span><span class="fu">record_session</span>(glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"http://127.0.0.1:8001"</span>), <span class="at">output_file =</span> <span class="st">"app1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>Use the <code>shinycannon</code> command to run the recording with <span class="math inline">\(n\)</span> users. Here I chose <span class="math inline">\(n = 10\)</span> and a minimum duration of 4 minutes. The output is saved on <code>run_app1w10</code> (App 1, run with 10 workers).</li>
+</ul>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cmd code-with-copy"><code class="sourceCode dosbat"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>shinycannon app1 http:/<span class="at">/127</span>.0.0.1:8001 -<span class="at">-workers</span> 10 -<span class="at">-loaded-duration-minutes</span> 4 -<span class="at">-output-dir</span> run_app1w10 -<span class="at">-overwrite-output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can see <code>R/load_test.R</code> for some auxiliary functions.</p>
+<p>The complete report can be seen on <code>my_runs.html</code>, but here are some highlights:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/run_app1w10-1.png" class="img-fluid figure-img"></p>
+<figcaption>The time spent by each user session. In an app with no delays, all sessions should finish at a close time.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/run_app1w10-2.png" class="img-fluid figure-img"></p>
+<figcaption>A detailed view of the time to load the home page per session. Notice that some users had to wait more than 30 seconds to load the home page.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/run_app1w10-3.png" class="img-fluid figure-img"></p>
+<figcaption>Boxplot of time spent on each task.</figcaption>
+</figure>
+</div>
+</section>
 </section>
 <section id="app-2-avoid-redundances-and-cache-what-you-can" class="level1">
 <h1>App 2: avoid redundances and cache what you can</h1>
-<p>After adding many <code>bindCache</code> to the reactives, we run <code>run_app2()</code> and see that………</p>
-<!-- check app2 without the mem_disk option -->
-<!-- Reading the docs of `bindCache` we can see that the size is small -->
+<p>After adding many <code>bindCache</code> to the reactives, we run <code>run_app2()</code> and see that only the first running of a given function is really calculated; the rest is cached. Some key points when using <code>bindCache</code>:</p>
+<ul>
+<li>The cache key can’t be too big. Using the entire <code>rc.data()</code> would be slow. Since there is a bijection between days and rc.data, we can use solely the date.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled" title="`bindCache` docs">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<code>bindCache</code> docs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>To compute the cache key, bindCache() hashes the contents of …, so it’s best to avoid including large objects in a cache key since that can result in slow hashing. It’s also best to avoid reference objects like environments and R6 objects, since the serialization of these objects may not capture relevant changes.</p>
+<p>If you want to use a large object as part of a cache key, it may make sense to do some sort of reduction on the data that still captures information about whether a value can be retrieved from the cache. For example, if you have a large data set with timestamps, it might make sense to extract the most recent timestamp and return that. Then, instead of hashing the entire data object, the cached reactive only needs to hash the timestamp.</p>
+<pre><code>r &lt;- reactive({ compute(bigdata()) } %&gt;%
+  bindCache({ extract_most_recent_time(bigdata()) })</code></pre>
+</div>
+</div>
+<ul>
+<li><p>Saving a big object in the disk takes time! The first time we read a file, a copy of <code>rc.data</code> is going to be saved as a RDS file in the <code>myapp-cache</code> dir. This can take some seconds to finish.</p></li>
+<li><p>We are using <code>shinyOptions(cache = cachem::cache_disk("./myapp-cache", max_size = 1024 * 1024^2, logfile = stdout(), evict = "lru"))</code> as the caching options. This means that the cache will be saved on disk so all users (even in different sessions) can access the cache. The files will be saved up to 1GB and then the least used will be deleted.</p></li>
+</ul>
 </section>
 
 
